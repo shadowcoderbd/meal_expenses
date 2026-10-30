@@ -1,9 +1,10 @@
 import clsx from 'clsx'
 import { AlertCircle, Calculator, Check, ChevronDown, CloudOff, Loader2, Moon, Receipt, RefreshCw, Settings, SlidersHorizontal, Sun, UtensilsCrossed, Wallet } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useMatch, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom'
 import { useTheme } from '../lib/theme'
 import { refreshAll, useData, useMeta } from '../store/data'
+import { useExitAnimation } from './ui'
 
 function SyncIndicator() {
   const status = useData((s) => s.status)
@@ -51,7 +52,9 @@ function ThemeToggle() {
       aria-label={`Switch to ${next} mode`}
       className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted hover:text-fg"
     >
-      {resolved === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      <span key={resolved} className="anim-spin-in">
+        {resolved === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </span>
     </button>
   )
 }
@@ -62,6 +65,7 @@ function PeriodSwitcher({ periodId }: { periodId?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const current = meta.periods.find((p) => p.id === periodId)
+  const menuRef = useExitAnimation<HTMLDivElement>(open, 140)
 
   useEffect(() => {
     const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
@@ -73,10 +77,10 @@ function PeriodSwitcher({ periodId }: { periodId?: string }) {
     <div ref={ref} className="relative min-w-0">
       <button onClick={() => setOpen(!open)} className="flex min-w-0 items-center gap-1 rounded-lg px-1 py-1 text-left hover:bg-surface-2">
         <span className="truncate text-lg font-bold">{current?.name ?? 'Meal Expenses'}</span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted" />
+        <ChevronDown className={clsx('h-4 w-4 shrink-0 text-muted transition-transform duration-200', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-40 mt-1 w-64 overflow-hidden rounded-2xl border border-border bg-surface shadow-xl">
+        <div ref={menuRef} className="anim-menu absolute left-0 top-full z-40 mt-1 w-64 overflow-hidden rounded-2xl border border-border bg-surface shadow-xl">
           <div className="max-h-72 overflow-y-auto py-1">
             {[...meta.periods].reverse().map((p) => (
               <button
@@ -101,6 +105,7 @@ function PeriodSwitcher({ periodId }: { periodId?: string }) {
 }
 
 export default function Layout() {
+  const location = useLocation()
   const match = useMatch('/p/:periodId/*')
   const periodId = match?.params.periodId
   const meta = useMeta()!
@@ -152,7 +157,9 @@ export default function Layout() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-28 pt-4 sm:pb-10">
-        <Outlet />
+        <div key={location.pathname} className="anim-page">
+          <Outlet />
+        </div>
       </main>
 
       <nav className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 backdrop-blur pb-[env(safe-area-inset-bottom)] sm:hidden">
@@ -161,10 +168,18 @@ export default function Layout() {
             <NavLink
               key={t.label}
               to={t.to}
-              className={({ isActive }) => clsx('flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium', isActive ? 'text-primary' : 'text-muted')}
+              className={({ isActive }) =>
+                clsx('flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors duration-200', isActive ? 'text-primary' : 'text-muted')
+              }
             >
-              <t.icon className="h-5 w-5" />
-              {t.label}
+              {({ isActive }) => (
+                <>
+                  <span className={clsx('rounded-full px-4 py-0.5 transition-all duration-300', isActive ? 'scale-105 bg-primary-soft' : 'bg-transparent')}>
+                    <t.icon className="h-5 w-5" />
+                  </span>
+                  {t.label}
+                </>
+              )}
             </NavLink>
           ))}
         </div>

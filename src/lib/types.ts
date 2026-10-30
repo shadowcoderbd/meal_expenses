@@ -105,6 +105,8 @@ export type PeriodOp =
   | { type: 'setMeal'; date: string; memberId: string; count: MealCount }
   | { type: 'setDay'; date: string; meals: Record<string, MealCount> }
   | { type: 'removeDay'; date: string }
+  /** Adds members without touching others (safe to re-apply after a conflict). */
+  | { type: 'addMembers'; ids: string[] }
   | { type: 'updatePeriod'; changes: Partial<Pick<Period, 'name' | 'ratio' | 'memberIds' | 'bill'>> }
   | { type: 'replace'; period: Period }
 

@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { AlertTriangle, Pencil, Printer } from 'lucide-react'
+import { AlertTriangle, Pencil, Printer, UserPlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { AmountsForm, RoomsEditor } from '../components/BillEditors'
 import { PeriodGuard, type PeriodContext } from '../components/PeriodGuard'
@@ -32,6 +32,7 @@ function BillView({ ctx }: { ctx: PeriodContext }) {
     balances,
   )
 
+  const roomCandidates = meta.members.filter((m) => m.active || period.memberIds.includes(m.id) || saved.rooms.some((x) => x.memberIds.includes(m.id)))
   const save = (next: Bill) => dispatchPeriod(period.id, { type: 'updatePeriod', changes: { bill: next } })
   const commitAmounts = (a: typeof amounts) => {
     if (!period.bill || JSON.stringify(a) !== JSON.stringify(period.bill.amounts)) save({ ...saved, amounts: a })
@@ -44,13 +45,33 @@ function BillView({ ctx }: { ctx: PeriodContext }) {
     }
   }
 
-  const lines: { group?: string; span?: number; label: string; value: (row: (typeof r.rows)[number]) => number }[] = [
-    { group: 'Prepaid', span: 2, label: 'Rent', value: (x) => x.rent },
-    { label: 'WiFi', value: (x) => x.wifi },
-    { group: 'Postpaid', span: 3, label: 'Maid', value: (x) => x.maid },
-    { label: 'Electricity', value: (x) => x.electricity },
-    { label: 'Mess expense', value: (x) => x.mess },
+  type Row = (typeof r.rows)[number]
+  const groups: { label: string; lines: { label: string; value: (x: Row) => number }[] }[] = [
+    {
+      label: 'Prepaid',
+      lines: [
+        { label: 'Rent', value: (x) => x.rent },
+        { label: 'WiFi', value: (x) => x.wifi },
+      ],
+    },
+    {
+      label: 'Postpaid',
+      lines: [
+        { label: 'Maid', value: (x) => x.maid },
+        { label: 'Electricity', value: (x) => x.electricity },
+        { label: 'Mess expense', value: (x) => x.mess },
+      ],
+    },
   ]
+
+  // Active members who were added after this period was created.
+  const missing = meta.members.filter((m) => m.active && !period.memberIds.includes(m.id))
+  const addToPeriod = (ids: string[]) => {
+    const fresh = ids.filter((id) => !period.memberIds.includes(id))
+    if (fresh.length) dispatchPeriod(period.id, { type: 'addMembers', ids: fresh })
+  }
+  // Bills not covered by anyone's total (e.g. a room with nobody in it). Rounding alone stays under 1 per person.
+  const unallocated = r.payees.total - r.rows.reduce((t, x) => t + x.total, 0)
 
   return (
     <div className="space-y-5">
@@ -88,13 +109,31 @@ function BillView({ ctx }: { ctx: PeriodContext }) {
         </Card>
       </section>
 
-      {(r.noRoom.length > 0 || r.emptyRooms.length > 0 || saved.rooms.length === 0) && (
+      {missing.length > 0 && (
+        <div className="no-print flex flex-wrap items-center gap-3 rounded-xl bg-primary-soft p-3 text-sm">
+          <UserPlus className="h-4 w-4 shrink-0 text-primary" />
+          <p className="min-w-0 flex-1">
+            Not in this period: <b>{missing.map((m) => m.name).join(', ')}</b>. Only period members share WiFi, maid, electricity and appear here.
+          </p>
+          <Button size="sm" onClick={() => addToPeriod(missing.map((m) => m.id))}>
+            Add to period
+          </Button>
+        </div>
+      )}
+
+      {(r.noRoom.length > 0 || r.emptyRooms.length > 0 || saved.rooms.length === 0 || Math.abs(unallocated) > 0.01) && (
         <div className="no-print flex gap-2 rounded-xl bg-danger-soft p-3 text-sm text-danger">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <div>
             {saved.rooms.length === 0 && <p>Add rooms so the rent can be split.</p>}
             {saved.rooms.length > 0 && r.noRoom.length > 0 && <p>Not in any room (pays no rent): {r.noRoom.map(name).join(', ')}.</p>}
             {r.emptyRooms.length > 0 && <p>Nobody is assigned to: {r.emptyRooms.join(', ')}.</p>}
+            {Math.abs(unallocated) > 0.01 && (
+              <p>
+                {fixed2(Math.abs(unallocated))} of the bills {unallocated > 0 ? 'is not charged to anyone' : 'is charged twice'}. Check the rooms and the
+                period's members.
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -151,64 +190,39 @@ function BillView({ ctx }: { ctx: PeriodContext }) {
 
       <section>
         <SectionTitle>Per person</SectionTitle>
-        <Card className="overflow-x-auto">
-          <table className="tabular w-full min-w-[560px] text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="sticky left-0 bg-surface px-3 py-2.5" colSpan={2} />
-                {r.rows.map((x) => (
-                  <th key={x.memberId} className="px-3 py-2.5 text-right font-semibold">
-                    {name(x.memberId)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {lines.map((line, i) => (
-                <tr key={line.label} className={clsx('border-border', (i === 1 || i === lines.length - 1) && 'border-b')}>
-                  {line.group && (
-                    <th rowSpan={line.span} className="w-20 border-r border-border px-3 py-2 text-left text-xs font-medium text-muted">
-                      {line.group}
-                    </th>
-                  )}
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-muted">{line.label}</td>
-                  {r.rows.map((x) => (
-                    <td key={x.memberId} className={clsx('px-3 py-2 text-right', line.label === 'Mess expense' && line.value(x) < 0 && 'text-good')}>
-                      {fixed2(line.value(x))}
-                    </td>
-                  ))}
-                </tr>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 print:grid-cols-2">
+          {r.rows.map((x) => (
+            <Card key={x.memberId} className="p-4">
+              <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-border pb-3">
+                <p className="truncate text-base font-semibold">{name(x.memberId)}</p>
+                <p className="tabular text-2xl font-bold">{x.rounded.toLocaleString()}</p>
+              </div>
+              {groups.map((g) => (
+                <div key={g.label} className="mb-2">
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">{g.label}</p>
+                  <dl className="tabular space-y-1 text-sm">
+                    {g.lines.map((line) => {
+                      const v = line.value(x)
+                      return (
+                        <div key={line.label} className="flex justify-between gap-3">
+                          <dt className="text-muted">{line.label}</dt>
+                          <dd className={clsx(line.label === 'Mess expense' && v < 0 && 'text-good')}>{fixed2(v)}</dd>
+                        </div>
+                      )
+                    })}
+                  </dl>
+                </div>
               ))}
-              <tr className="border-b border-border">
-                <td colSpan={2} className="px-3 py-2 text-right font-semibold">
-                  Total per person
-                </td>
-                {r.rows.map((x) => (
-                  <td key={x.memberId} className="px-3 py-2 text-right">
-                    {fixed2(x.total)}
-                  </td>
-                ))}
-              </tr>
-              <tr className="border-b border-border bg-surface-2/60">
-                <td colSpan={2} className="px-3 py-3 text-right text-base font-bold">
-                  Round
-                </td>
-                {r.rows.map((x) => (
-                  <td key={x.memberId} className="px-3 py-3 text-right text-lg font-bold">
-                    {x.rounded.toLocaleString()}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td colSpan={2} className="px-3 py-3 text-right text-base font-bold">
-                  Total
-                </td>
-                <td colSpan={r.rows.length} className="px-3 py-3 text-center text-xl font-bold text-danger">
-                  {r.roundedTotal.toLocaleString()}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+              <div className="tabular mt-3 flex justify-between border-t border-border pt-2 text-sm font-semibold">
+                <span>Total per person</span>
+                <span>{fixed2(x.total)}</span>
+              </div>
+            </Card>
+          ))}
+        </div>
+        <Card tone="accent" className="mt-3 flex items-center justify-between p-4">
+          <span className="text-base font-semibold">Total (rounded)</span>
+          <span className="tabular text-2xl font-bold">{r.roundedTotal.toLocaleString()}</span>
         </Card>
         <p className="mt-2 text-xs text-muted">
           Mess expense comes from the Summary: what each person owes for meals and shared expenses (negative = gets money back). Rent is split by room, WiFi,
@@ -225,7 +239,9 @@ function BillView({ ctx }: { ctx: PeriodContext }) {
             <Button
               className="flex-1"
               onClick={() => {
-                save({ ...bill, rooms: editingRooms.filter((x) => x.name.trim()) })
+                const rooms = editingRooms.filter((x) => x.name.trim())
+                addToPeriod(rooms.flatMap((x) => x.memberIds))
+                save({ ...bill, rooms })
                 setEditingRooms(null)
               }}
             >
@@ -234,7 +250,8 @@ function BillView({ ctx }: { ctx: PeriodContext }) {
           }
         >
           <p className="mb-3 text-sm text-muted">Share is the room's weight, e.g. 17 for the small room and 19 for the big room.</p>
-          <RoomsEditor rooms={editingRooms} members={periodMembers} onChange={setEditingRooms} />
+          <RoomsEditor rooms={editingRooms} members={roomCandidates} onChange={setEditingRooms} />
+          <p className="mt-3 text-xs text-muted">Anyone you put in a room is added to this period.</p>
         </Modal>
       )}
     </div>

@@ -1,11 +1,47 @@
 import clsx from 'clsx'
 import { Check, Copy, Loader2, Minus, Plus, X } from 'lucide-react'
-import { useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
 
 /** Joins classes and lets later Tailwind classes override earlier ones (e.g. a caller's w-24 beats the default w-full). */
 export const cn = (...args: Parameters<typeof clsx>) => twMerge(clsx(args))
+
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/**
+ * Exit animations without changing how callers mount/unmount things: when the element is
+ * removed (or `active` turns false), a static copy is left in its place with
+ * data-state="closed" so its CSS exit animation can play, then it is discarded.
+ * `fixed` elements fall back to <body> if their parent disappeared too (e.g. on navigation).
+ */
+export function useExitAnimation<T extends HTMLElement>(active: boolean, duration = 220, fixed = false) {
+  const ref = useRef<T>(null)
+  useLayoutEffect(() => {
+    const node = ref.current
+    const parent = node?.parentElement
+    if (!node) return
+    return () => {
+      if (reducedMotion()) return
+      const clone = node.cloneNode(true) as HTMLElement
+      // cloneNode copies attributes only; carry over what's typed into fields.
+      const from = node.querySelectorAll<HTMLInputElement>('input, textarea, select')
+      clone.querySelectorAll<HTMLInputElement>('input, textarea, select').forEach((el, i) => (el.value = from[i]?.value ?? ''))
+      queueMicrotask(() => {
+        if (node.isConnected) return // StrictMode re-running effects, not a real removal
+        const host = parent?.isConnected ? parent : fixed ? document.body : null
+        if (!host) return
+        clone.dataset.state = 'closed'
+        clone.setAttribute('aria-hidden', 'true')
+        clone.inert = true
+        clone.style.pointerEvents = 'none'
+        host.appendChild(clone)
+        setTimeout(() => clone.remove(), duration)
+      })
+    }
+  }, [active, duration, fixed])
+  return ref
+}
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
@@ -114,7 +150,11 @@ export function Stepper({ value, onChange, step = 1, label }: { value: number; o
       >
         <Minus className="h-4 w-4" />
       </button>
-      <span className="tabular w-7 text-center text-base font-semibold">{value}</span>
+      <span className="tabular w-7 text-center text-base font-semibold">
+        <span key={value} className="anim-bump">
+          {value}
+        </span>
+      </span>
       <button
         type="button"
         aria-label={`Increase ${label ?? ''}`}
@@ -138,11 +178,12 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
       document.body.style.overflow = ''
     }
   }, [open, onClose])
+  const ref = useExitAnimation<HTMLDivElement>(open, 240, true)
   if (!open) return null
   return (
-    <div className="no-print fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="relative flex max-h-[92dvh] w-full flex-col rounded-t-3xl bg-surface shadow-2xl sm:max-w-lg sm:rounded-3xl">
+    <div ref={ref} className="no-print fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="anim-backdrop absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="anim-panel relative flex max-h-[92dvh] w-full flex-col rounded-t-3xl bg-surface shadow-2xl sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h3 className="text-lg font-semibold">{title}</h3>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
@@ -249,14 +290,21 @@ export function toast(text: string) {
   setTimeout(() => useToastStore.setState((s) => ({ items: s.items.filter((t) => t.id !== id) })), 2800)
 }
 
+function Toast({ text }: { text: string }) {
+  const ref = useExitAnimation<HTMLDivElement>(true, 200)
+  return (
+    <div ref={ref} className="anim-toast rounded-xl bg-fg px-4 py-2.5 text-sm text-bg shadow-lg">
+      {text}
+    </div>
+  )
+}
+
 export function ToastHost() {
   const items = useToastStore((s) => s.items)
   return (
     <div className="no-print pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-6">
       {items.map((t) => (
-        <div key={t.id} className="rounded-xl bg-fg px-4 py-2.5 text-sm text-bg shadow-lg">
-          {t.text}
-        </div>
+        <Toast key={t.id} text={t.text} />
       ))}
     </div>
   )

@@ -34,8 +34,12 @@ export const useTheme = create<ThemeState>((set) => ({
     } catch {
       /* ignore */
     }
-    if (pref === 'system') delete document.documentElement.dataset.theme
-    else document.documentElement.dataset.theme = pref
+    // Fade colours instead of snapping, only while switching.
+    const root = document.documentElement
+    root.classList.add('theme-transition')
+    setTimeout(() => root.classList.remove('theme-transition'), 350)
+    if (pref === 'system') delete root.dataset.theme
+    else root.dataset.theme = pref
     set({ pref, resolved: resolve(pref) })
   },
 }))

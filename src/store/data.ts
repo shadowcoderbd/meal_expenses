@@ -178,6 +178,14 @@ async function flush(path: string): Promise<void> {
     for (let conflicts = 0; ; ) {
       const f = useData.getState().files[path]
       if (!f || f.pending.length === 0) break
+      if (!f.remote && !isMeta(path) && f.pending[0].type !== 'replace' && f.sha === undefined) {
+        // Edits to a period this device hasn't loaded yet: fetch it first so they apply on top.
+        const fresh = await readJson<Doc>(target(path))
+        if (fresh) {
+          setFile(path, { remote: fresh.data, sha: fresh.sha, pending: useData.getState().files[path].pending })
+          continue
+        }
+      }
       const ops = f.pending
       const next = applyOps(path, f.remote, ops)
       if (!next) {

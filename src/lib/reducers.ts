@@ -65,6 +65,8 @@ export function applyPeriodOp(period: Period, op: PeriodOp): Period {
       delete meals[op.date]
       return { ...period, meals }
     }
+    case 'addMembers':
+      return { ...period, memberIds: [...period.memberIds, ...op.ids.filter((id) => !period.memberIds.includes(id))] }
     case 'updatePeriod':
       return { ...period, ...op.changes }
   }
@@ -101,6 +103,8 @@ export function describePeriodOp(op: PeriodOp): string {
       return `Set meals for ${op.date}`
     case 'removeDay':
       return `Remove meals for ${op.date}`
+    case 'addMembers':
+      return 'Add members to period'
     case 'updatePeriod':
       return `Update period (${Object.keys(op.changes).join(', ')})`
   }

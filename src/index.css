@@ -101,3 +101,82 @@ input[type='number'] {
 .print-only {
   display: none;
 }
+
+/* ---------- Motion ---------- */
+/* Elements get an enter animation on mount. Exit animations play on a static copy
+   marked data-state="closed" (see useExitAnimation in components/ui.tsx). */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+}
+@keyframes sheet-out {
+  to { transform: translateY(100%); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+}
+@keyframes pop-out {
+  to { opacity: 0; transform: translateY(8px) scale(0.97); }
+}
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+}
+@keyframes menu-out {
+  to { opacity: 0; transform: translateY(-4px) scale(0.96); }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+}
+@keyframes bump {
+  40% { transform: scale(1.25); }
+}
+@keyframes spin-in {
+  from { opacity: 0; transform: rotate(-90deg) scale(0.6); }
+}
+
+.anim-backdrop { animation: fade-in 0.2s ease-out both; }
+[data-state='closed'] .anim-backdrop { animation: fade-out 0.2s ease-in both; }
+
+/* Bottom sheet on phones, centred pop-up on larger screens. */
+.anim-panel { animation: sheet-in 0.32s cubic-bezier(0.32, 0.72, 0, 1) both; }
+[data-state='closed'] .anim-panel { animation: sheet-out 0.22s cubic-bezier(0.4, 0, 1, 1) both; }
+@media (min-width: 640px) {
+  .anim-panel { animation: pop-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  [data-state='closed'] .anim-panel { animation: pop-out 0.16s ease-in both; }
+}
+
+.anim-menu { transform-origin: top left; animation: menu-in 0.16s ease-out both; }
+.anim-menu[data-state='closed'] { animation: menu-out 0.12s ease-in both; }
+
+.anim-toast { animation: toast-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.anim-toast[data-state='closed'] { animation: fade-out 0.2s ease-in both; }
+
+/* Opacity only: a transform here would break position:fixed children (FAB, dialogs). */
+.anim-page { animation: fade-in 0.22s ease-out; }
+
+.anim-bump { display: inline-block; animation: bump 0.22s ease-out; }
+.anim-spin-in { animation: spin-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* Smooth colour change while switching themes (class added for a moment by the theme store). */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, fill 0.3s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

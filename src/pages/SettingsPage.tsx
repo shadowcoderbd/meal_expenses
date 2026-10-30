@@ -11,7 +11,7 @@ import { nowIso, today, uid } from '../lib/ids'
 import { useTheme, type ThemePref } from '../lib/theme'
 import type { Bill, Member } from '../lib/types'
 import { changeOwnPassword, issuePassword, replaceToken, revokeLogin, useAuth, usernameTaken } from '../store/auth'
-import { dispatchMeta, exportAll, restoreAll, useMeta } from '../store/data'
+import { dispatchMeta, dispatchPeriod, exportAll, restoreAll, useMeta } from '../store/data'
 
 function Credentials({ items, onClose }: { items: { name: string; username: string; password: string }[]; onClose: () => void }) {
   const url = window.location.href.split('#')[0]
@@ -64,6 +64,9 @@ function MembersSection() {
       const member: Member = { id: uid('m'), name: form.name.trim(), username, active: true, createdAt: nowIso() }
       const password = await issuePassword(member.id, username)
       dispatchMeta({ type: 'upsertMember', member })
+      // New people usually join now, so include them in the current (latest) period.
+      const latest = meta.periods[meta.periods.length - 1]
+      if (latest) dispatchPeriod(latest.id, { type: 'addMembers', ids: [member.id] })
       setIssued([{ name: member.name, username, password }])
       setAdding(false)
       setForm({ name: '', username: '' })

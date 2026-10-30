@@ -6,7 +6,8 @@ export function money(n: number, currency: string): string {
 
 /** Always two decimals, e.g. 4,268.89 and 210.00 (matches the bill sheet). */
 export function fixed2(n: number): string {
-  return (Math.round(n * 100) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const v = Math.round(n * 100) / 100 || 0 // `|| 0` turns -0 into 0 so it doesn't print as "-0.00"
+  return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 export function num(n: number, digits = 2): string {
