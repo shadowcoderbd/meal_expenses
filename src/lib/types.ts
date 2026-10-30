@@ -38,8 +38,9 @@ export interface Expense {
   id: string
   amount: number
   description: string
-  quantity: number
-  unit: string
+  /** Optional; omitted (along with unit) when no quantity was entered. */
+  quantity?: number
+  unit?: string
   /** YYYY-MM-DD */
   date: string
   category: string

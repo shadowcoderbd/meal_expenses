@@ -1,11 +1,12 @@
 import clsx from 'clsx'
-import { Download, KeyRound, LogOut, RotateCcw, Upload, UserPlus } from 'lucide-react'
+import { Download, KeyRound, LogOut, Monitor, Moon, RotateCcw, Sun, Upload, UserPlus } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { ListEditor, RatioEditor } from '../components/editors'
 import { Button, Card, CopyButton, ErrorText, Field, Input, Modal, SectionTitle, confirm, toast } from '../components/ui'
 import { downloadJson, parseBackup } from '../lib/backup'
 import { MIN_PASSWORD_LENGTH, normaliseUsername } from '../lib/crypto'
 import { nowIso, today, uid } from '../lib/ids'
+import { useTheme, type ThemePref } from '../lib/theme'
 import type { Member } from '../lib/types'
 import { changeOwnPassword, issuePassword, replaceToken, revokeLogin, useAuth, usernameTaken } from '../store/auth'
 import { dispatchMeta, exportAll, restoreAll, useMeta } from '../store/data'
@@ -237,18 +238,22 @@ function AccountSection() {
   return (
     <section>
       <SectionTitle>Account</SectionTitle>
-      <Card className="flex flex-wrap items-center gap-3 p-4">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-soft font-bold text-primary">{(me?.name ?? '?')[0].toUpperCase()}</div>
-        <div className="min-w-0 flex-1">
-          <p className="font-medium">{me?.name}</p>
-          <p className="text-xs text-muted">@{session!.username}</p>
+      <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-soft font-bold text-primary">{(me?.name ?? '?')[0].toUpperCase()}</div>
+          <div className="min-w-0">
+            <p className="truncate font-medium">{me?.name}</p>
+            <p className="truncate text-xs text-muted">@{session!.username}</p>
+          </div>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
-          <KeyRound className="h-4 w-4" /> Change password
-        </Button>
-        <Button variant="ghost" size="sm" onClick={logout}>
-          <LogOut className="h-4 w-4" /> Log out
-        </Button>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+            <KeyRound className="h-4 w-4" /> Change password
+          </Button>
+          <Button variant="secondary" size="sm" onClick={logout}>
+            <LogOut className="h-4 w-4" /> Log out
+          </Button>
+        </div>
       </Card>
       <Modal
         open={open}
@@ -405,6 +410,40 @@ function TokenSection() {
   )
 }
 
+function AppearanceSection() {
+  const pref = useTheme((s) => s.pref)
+  const setPref = useTheme((s) => s.setPref)
+  const options: { value: ThemePref; label: string; icon: typeof Sun }[] = [
+    { value: 'system', label: 'System', icon: Monitor },
+    { value: 'light', label: 'Light', icon: Sun },
+    { value: 'dark', label: 'Dark', icon: Moon },
+  ]
+  return (
+    <section>
+      <SectionTitle>Appearance</SectionTitle>
+      <Card className="p-4">
+        <div className="grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1">
+          {options.map((o) => (
+            <button
+              key={o.value}
+              onClick={() => setPref(o.value)}
+              aria-pressed={pref === o.value}
+              className={clsx(
+                'flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium',
+                pref === o.value ? 'bg-surface text-fg shadow-sm' : 'text-muted',
+              )}
+            >
+              <o.icon className="h-4 w-4" />
+              {o.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-muted">Saved on this device. “System” follows your phone or computer setting.</p>
+      </Card>
+    </section>
+  )
+}
+
 export default function SettingsPage() {
   const meta = useMeta()!
   const [currency, setCurrency] = useState(meta.currency)
@@ -412,6 +451,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <AccountSection />
+      <AppearanceSection />
       <MembersSection />
 
       <section>

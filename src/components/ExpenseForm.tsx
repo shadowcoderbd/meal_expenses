@@ -17,8 +17,6 @@ export function ExpenseForm({ ctx, expense, onClose }: { ctx: PeriodContext; exp
         id: uid('e'),
         amount: 0,
         description: '',
-        quantity: 1,
-        unit: meta.units[0] ?? 'pcs',
         date: today(),
         category: meta.categories[0] ?? 'Other',
         paidBy: periodMembers.some((m) => m.id === me) ? me : (periodMembers[0]?.id ?? me),
@@ -29,7 +27,12 @@ export function ExpenseForm({ ctx, expense, onClose }: { ctx: PeriodContext; exp
         updatedAt: nowIso(),
       }
     : expense
-  const [form, setForm] = useState({ ...initial, amountText: isNew ? '' : String(initial.amount), qtyText: String(initial.quantity) })
+  const [form, setForm] = useState({
+    ...initial,
+    unit: initial.unit ?? meta.units[0] ?? 'pcs',
+    amountText: isNew ? '' : String(initial.amount),
+    qtyText: initial.quantity ? String(initial.quantity) : '',
+  })
   const [error, setError] = useState<string>()
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -38,15 +41,15 @@ export function ExpenseForm({ ctx, expense, onClose }: { ctx: PeriodContext; exp
 
   function save() {
     const amount = Number(form.amountText)
-    const quantity = form.qtyText === '' ? 1 : Number(form.qtyText)
+    const quantity = form.qtyText === '' ? 0 : Number(form.qtyText)
     if (!(amount > 0)) return setError('Enter an amount greater than 0')
-    if (!(quantity > 0)) return setError('Quantity must be greater than 0')
+    if (!(quantity >= 0)) return setError('Quantity cannot be negative')
     if (!form.isMeal && form.participants.length === 0) return setError('Select at least one person who shared this expense')
-    const { amountText: _a, qtyText: _q, ...rest } = form
-    dispatchPeriod(period.id, {
-      type: 'upsertExpense',
-      expense: { ...rest, amount, quantity, description: rest.description.trim(), date: rest.date || today(), updatedAt: nowIso() },
-    })
+    const { amountText: _a, qtyText: _q, quantity: _qty, unit, ...rest } = form
+    const expense: Expense = { ...rest, amount, description: rest.description.trim(), date: rest.date || today(), updatedAt: nowIso() }
+    // Quantity is optional: 0 or empty means nothing about quantity is stored.
+    if (quantity > 0) Object.assign(expense, { quantity, unit })
+    dispatchPeriod(period.id, { type: 'upsertExpense', expense })
     onClose()
   }
 
@@ -105,11 +108,11 @@ export function ExpenseForm({ ctx, expense, onClose }: { ctx: PeriodContext; exp
           <Input value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="e.g. Rice, chicken, vegetables" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Quantity">
-            <Input inputMode="decimal" type="number" step="any" min="0" value={form.qtyText} onChange={(e) => set('qtyText', e.target.value)} />
+          <Field label="Quantity (optional)">
+            <Input inputMode="decimal" type="number" step="any" min="0" value={form.qtyText} onChange={(e) => set('qtyText', e.target.value)} placeholder="0" />
           </Field>
           <Field label="Unit">
-            <Select value={form.unit} onChange={(e) => set('unit', e.target.value)}>
+            <Select value={form.unit} onChange={(e) => set('unit', e.target.value)} disabled={!(Number(form.qtyText) > 0)}>
               {[...new Set([...meta.units, form.unit])].map((u) => (
                 <option key={u}>{u}</option>
               ))}

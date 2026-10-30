@@ -10,7 +10,7 @@ import type { Expense } from '../lib/types'
 
 export function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <Card className={clsx('p-3.5', accent && 'border-transparent bg-primary text-primary-fg')}>
+    <Card tone={accent ? 'accent' : 'default'} className="p-3.5">
       <p className={clsx('text-xs font-medium', accent ? 'opacity-80' : 'text-muted')}>{label}</p>
       <p className="tabular mt-1 text-xl font-bold">{value}</p>
       {sub && <p className={clsx('mt-0.5 text-xs', accent ? 'opacity-80' : 'text-muted')}>{sub}</p>}
@@ -88,7 +88,7 @@ function Expenses({ ctx }: { ctx: PeriodContext }) {
                     <p className="truncate font-medium">{e.description || e.category}</p>
                     <p className="truncate text-xs text-muted">
                       {e.category}
-                      {(e.quantity !== 1 || e.unit !== 'pcs') && ` · ${num(e.quantity)} ${e.unit}`} · paid by {name(e.paidBy)}
+                      {!!e.quantity && ` · ${num(e.quantity)} ${e.unit ?? ''}`} · paid by {name(e.paidBy)}
                       {!e.isMeal && ` · shared by ${e.participants.length}`}
                     </p>
                   </div>

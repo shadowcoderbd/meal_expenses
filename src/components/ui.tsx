@@ -37,7 +37,7 @@ export function Button({
 }
 
 const fieldClass =
-  'w-full h-11 rounded-xl border border-border bg-surface px-3 text-[15px] text-fg placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20'
+  'w-full h-11 rounded-xl border border-border bg-surface px-3 text-[15px] text-fg placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50'
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={clsx(fieldClass, className)} />
@@ -61,8 +61,15 @@ export function Field({ label, hint, children, className }: { label: string; hin
   )
 }
 
-export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={clsx('card rounded-2xl border border-border bg-surface shadow-sm', className)}>{children}</div>
+const cardTones = {
+  default: 'border-border bg-surface',
+  accent: 'border-transparent bg-primary text-primary-fg',
+  good: 'border-transparent bg-primary-soft',
+  bad: 'border-transparent bg-danger-soft',
+}
+
+export function Card({ className, children, tone = 'default' }: { className?: string; children: ReactNode; tone?: keyof typeof cardTones }) {
+  return <div className={clsx('card rounded-2xl border shadow-sm', cardTones[tone], className)}>{children}</div>
 }
 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {

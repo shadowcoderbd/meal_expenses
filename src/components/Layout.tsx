@@ -1,7 +1,8 @@
 import clsx from 'clsx'
-import { AlertCircle, Check, ChevronDown, CloudOff, Loader2, Receipt, RefreshCw, Settings, SlidersHorizontal, UtensilsCrossed, Wallet } from 'lucide-react'
+import { AlertCircle, Check, ChevronDown, CloudOff, Loader2, Moon, Receipt, RefreshCw, Settings, SlidersHorizontal, Sun, UtensilsCrossed, Wallet } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useMatch, useNavigate } from 'react-router-dom'
+import { useTheme } from '../lib/theme'
 import { refreshAll, useData, useMeta } from '../store/data'
 
 function SyncIndicator() {
@@ -35,6 +36,22 @@ function SyncIndicator() {
         <Check className="h-3.5 w-3.5" />
       )}
       <span className="hidden sm:inline">{label}</span>
+    </button>
+  )
+}
+
+function ThemeToggle() {
+  const resolved = useTheme((s) => s.resolved)
+  const setPref = useTheme((s) => s.setPref)
+  const next = resolved === 'dark' ? 'light' : 'dark'
+  return (
+    <button
+      onClick={() => setPref(next)}
+      title={`Switch to ${next} mode`}
+      aria-label={`Switch to ${next} mode`}
+      className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted hover:text-fg"
+    >
+      {resolved === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
   )
 }
@@ -126,7 +143,8 @@ export default function Layout() {
               </NavLink>
             ))}
           </nav>
-          <div className="ml-auto sm:ml-2">
+          <div className="ml-auto flex items-center gap-2 sm:ml-2">
+            <ThemeToggle />
             <SyncIndicator />
           </div>
         </div>

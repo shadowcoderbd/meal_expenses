@@ -40,7 +40,7 @@ function Summary({ ctx }: { ctx: PeriodContext }) {
       )}
 
       {mine && (
-        <Card className={clsx('no-print p-4', mine.balance >= 0 ? 'bg-primary-soft' : 'bg-danger-soft')}>
+        <Card tone={mine.balance >= 0 ? 'good' : 'bad'} className="no-print p-4">
           <p className="text-sm text-muted">Your balance</p>
           <p className={clsx('tabular text-2xl font-bold', mine.balance >= 0 ? 'text-primary' : 'text-danger')}>
             {mine.balance >= 0 ? 'You get ' : 'You owe '}
