@@ -16,6 +16,14 @@
       "iterations": 600000,
       "ciphertext": "4zJrarQZkGRyDkEVLhZsW4PY14murjhfC0NRKosSJifvNZDUq7gn+58js3vAP3JbcdYRZyG7weK1pjPuqcOZlxpexB/TzepV3OSHJEClB7eYmKCzgCZXXIEMGqJYWK+eIBRgFgnllct2EwL5srOBX9Fb41lys7Rxt2kHLC4ROY8ro9AsDclK76l6Wu1Ux6zfuMBKDp6ccWSAYp9MlMgXAqIhHheaLecDNfYVYEOggmHic+XGo9HVKx9TZ37WXWvRxUSYlnoMlD/LomYWDV+jmgXVprHGQMxFsH1vz2E02DaKgDxDDacWToK+",
       "updatedAt": "2026-10-30T18:25:49.455Z"
+    },
+    {
+      "id": "439da27997d371888b37e2ae30b42c9da06ad6068ddcb5007b8142a2707e9f9b",
+      "salt": "8znfWkeW5J2gU2tFXCNHZg==",
+      "iv": "XYwTXIhk+q1cYYod",
+      "iterations": 600000,
+      "ciphertext": "ktgikwJtyF2E0V3jZsM6+B278AKCVgnwKfPGi11PUlAmJBJjKunGzQ3CNMrAbsxEHaHPH/7LvqpdyyK+rnvLGrLPGYoMcOV3Ew0mki8W8Yl0b7F1zmJLm2RP5TmNPxE75W3OFANfja3fApDiyKuJPVq5jGy/87GRkmKlfPs1sZwOEpsuXjeYsOOVTn+RLTFJvIEFr3rv9MnxPQOKZoZzIxd+yvWgI9aiiOCQRtT21g4+qD2btx/asPy6iD38wvp1v8dc5a6VXMN8DX6+7Cysy+QU82rkXs/XLeJW9/fsQZVWNbZZHGlt5CHmxBYJLMLRcngY",
+      "updatedAt": "2026-10-30T18:41:00.525Z"
     }
   ]
 }
