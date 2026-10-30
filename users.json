@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "users": [
+    {
+      "id": "398f707dd7d7a4d89689b47b79138a0ed283922784f05992f7de32ae7cda7a21",
+      "salt": "lkqp5IIRXGPqNdHZUPUhUA==",
+      "iv": "KsB1j5qEmuPhOuz7",
+      "iterations": 600000,
+      "ciphertext": "LKsKFfu0jvtcK03B8KUE3dgDP8f8loKSRuUJp/24Me6mzskJSMSfKm3FJZ7mqjYYfO6e0vlp1xytMEbkHgeIHIgom1q0mhl+b5lW8w9BEqQSruMxTdM46qg01W6ZFsEUx3nCr4/K8p3ZRFITfbu5NWKFZwKTmkAu1JCoBOHXBjg7XEl1/V6xA7SmkLrK3ZqK/SZAnxcG68hrNKFpDhutuCt8ywZQVJVPPXuZHySlJ6yoTqxRHn3I66mnIEO2HcpKSD8Z+0AChXO1Mwl4qXt4sG74xodOjozphQgbR6KjSvyr9BUPZbTxEpPiEQrt4HnTOg==",
+      "updatedAt": "2026-10-30T18:17:10.105Z"
+    }
+  ]
+}
