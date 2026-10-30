@@ -3,6 +3,10 @@ import type { Meta, Period } from './types'
 
 const ratio = z.object({ b: z.number().min(0), l: z.number().min(0), d: z.number().min(0) })
 const count = z.object({ b: z.number().min(0), l: z.number().min(0), d: z.number().min(0) })
+const bill = z.object({
+  amounts: z.object({ rent: z.number(), gas: z.number(), utility: z.number(), wifi: z.number(), maid: z.number(), electricity: z.number() }),
+  rooms: z.array(z.object({ id: z.string(), name: z.string(), share: z.number().min(0), memberIds: z.array(z.string()) })),
+})
 
 const metaSchema = z.object({
   version: z.literal(1),
@@ -14,6 +18,7 @@ const metaSchema = z.object({
   units: z.array(z.string()),
   defaultRatio: ratio,
   periods: z.array(z.object({ id: z.string(), name: z.string(), createdAt: z.string() })),
+  billDefaults: bill.optional(),
 })
 
 const periodSchema = z.object({
@@ -41,6 +46,7 @@ const periodSchema = z.object({
     }),
   ),
   meals: z.record(z.string(), z.record(z.string(), count)),
+  bill: bill.optional(),
 })
 
 const backupSchema = z.object({

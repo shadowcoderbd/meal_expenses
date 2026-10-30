@@ -1,13 +1,15 @@
 import clsx from 'clsx'
 import { Download, KeyRound, LogOut, Monitor, Moon, RotateCcw, Sun, Upload, UserPlus } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { AmountsForm, RoomsEditor } from '../components/BillEditors'
 import { ListEditor, RatioEditor } from '../components/editors'
 import { Button, Card, CopyButton, ErrorText, Field, Input, Modal, SectionTitle, confirm, toast } from '../components/ui'
 import { downloadJson, parseBackup } from '../lib/backup'
+import { EMPTY_AMOUNTS } from '../lib/bill'
 import { MIN_PASSWORD_LENGTH, normaliseUsername } from '../lib/crypto'
 import { nowIso, today, uid } from '../lib/ids'
 import { useTheme, type ThemePref } from '../lib/theme'
-import type { Member } from '../lib/types'
+import type { Bill, Member } from '../lib/types'
 import { changeOwnPassword, issuePassword, replaceToken, revokeLogin, useAuth, usernameTaken } from '../store/auth'
 import { dispatchMeta, exportAll, restoreAll, useMeta } from '../store/data'
 
@@ -410,6 +412,36 @@ function TokenSection() {
   )
 }
 
+function BillDefaultsSection() {
+  const meta = useMeta()!
+  const saved: Bill = meta.billDefaults ?? { amounts: EMPTY_AMOUNTS, rooms: [] }
+  const [draft, setDraft] = useState<Bill>(saved)
+  const changed = JSON.stringify(draft) !== JSON.stringify(saved)
+  return (
+    <section>
+      <SectionTitle>Monthly bill defaults</SectionTitle>
+      <Card className="space-y-4 p-4">
+        <p className="text-sm text-muted">Each period's Bill page starts with these amounts and rooms. You can still change them per period.</p>
+        <AmountsForm value={saved.amounts} currency={meta.currency} onChange={(amounts) => setDraft((d) => ({ ...d, amounts }))} />
+        <div>
+          <p className="mb-2 text-sm font-medium">Rooms</p>
+          <RoomsEditor rooms={draft.rooms} members={meta.members.filter((m) => m.active)} onChange={(rooms) => setDraft((d) => ({ ...d, rooms }))} />
+        </div>
+        {changed && (
+          <Button
+            onClick={() => {
+              dispatchMeta({ type: 'updateSettings', settings: { billDefaults: { ...draft, rooms: draft.rooms.filter((r) => r.name.trim()) } } })
+              toast('Bill defaults saved')
+            }}
+          >
+            Save bill defaults
+          </Button>
+        )}
+      </Card>
+    </section>
+  )
+}
+
 function AppearanceSection() {
   const pref = useTheme((s) => s.pref)
   const setPref = useTheme((s) => s.setPref)
@@ -468,6 +500,8 @@ export default function SettingsPage() {
           <p className="mt-3 text-xs text-muted">New periods copy this ratio. Change an existing period's ratio from its own settings.</p>
         </Card>
       </section>
+
+      <BillDefaultsSection key={JSON.stringify(meta.billDefaults ?? null)} />
 
       <section>
         <SectionTitle>Categories</SectionTitle>

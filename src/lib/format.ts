@@ -4,6 +4,11 @@ export function money(n: number, currency: string): string {
   return `${sign}${currency}${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
 }
 
+/** Always two decimals, e.g. 4,268.89 and 210.00 (matches the bill sheet). */
+export function fixed2(n: number): string {
+  return (Math.round(n * 100) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 export function num(n: number, digits = 2): string {
   return (Math.round(n * 10 ** digits) / 10 ** digits).toLocaleString(undefined, { maximumFractionDigits: digits })
 }

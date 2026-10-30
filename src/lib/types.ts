@@ -24,6 +24,29 @@ export interface PeriodRef {
   createdAt: string
 }
 
+/** Fixed monthly household bills (entered on the Bill page). */
+export interface BillAmounts {
+  rent: number
+  gas: number
+  utility: number
+  wifi: number
+  maid: number
+  electricity: number
+}
+
+export interface Room {
+  id: string
+  name: string
+  /** Relative weight of the room's rent, e.g. 17 (small) and 19 (big) out of 36. */
+  share: number
+  memberIds: string[]
+}
+
+export interface Bill {
+  amounts: BillAmounts
+  rooms: Room[]
+}
+
 export interface Meta {
   version: 1
   currency: string
@@ -32,6 +55,8 @@ export interface Meta {
   units: string[]
   defaultRatio: MealRatio
   periods: PeriodRef[]
+  /** Amounts and rooms a period's bill starts from. */
+  billDefaults?: Bill
 }
 
 export interface Expense {
@@ -63,11 +88,12 @@ export interface Period {
   expenses: Expense[]
   /** date (YYYY-MM-DD) -> memberId -> meals */
   meals: Record<string, Record<string, MealCount>>
+  bill?: Bill
 }
 
 export type MetaOp =
   | { type: 'upsertMember'; member: Member }
-  | { type: 'updateSettings'; settings: Partial<Pick<Meta, 'currency' | 'categories' | 'units' | 'defaultRatio'>> }
+  | { type: 'updateSettings'; settings: Partial<Pick<Meta, 'currency' | 'categories' | 'units' | 'defaultRatio' | 'billDefaults'>> }
   | { type: 'addPeriod'; period: PeriodRef }
   | { type: 'renamePeriod'; id: string; name: string }
   | { type: 'removePeriod'; id: string }
@@ -79,7 +105,7 @@ export type PeriodOp =
   | { type: 'setMeal'; date: string; memberId: string; count: MealCount }
   | { type: 'setDay'; date: string; meals: Record<string, MealCount> }
   | { type: 'removeDay'; date: string }
-  | { type: 'updatePeriod'; changes: Partial<Pick<Period, 'name' | 'ratio' | 'memberIds'>> }
+  | { type: 'updatePeriod'; changes: Partial<Pick<Period, 'name' | 'ratio' | 'memberIds' | 'bill'>> }
   | { type: 'replace'; period: Period }
 
 /** Decrypted content of a users.json entry; held in memory/localStorage while logged in. */

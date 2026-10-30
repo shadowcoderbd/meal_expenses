@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { AlertCircle, Check, ChevronDown, CloudOff, Loader2, Moon, Receipt, RefreshCw, Settings, SlidersHorizontal, Sun, UtensilsCrossed, Wallet } from 'lucide-react'
+import { AlertCircle, Calculator, Check, ChevronDown, CloudOff, Loader2, Moon, Receipt, RefreshCw, Settings, SlidersHorizontal, Sun, UtensilsCrossed, Wallet } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useMatch, useNavigate } from 'react-router-dom'
 import { useTheme } from '../lib/theme'
@@ -111,6 +111,7 @@ export default function Layout() {
     { to: fallback ? `${base}/expenses` : '/periods', label: 'Expenses', icon: Receipt },
     { to: fallback ? `${base}/meals` : '/periods', label: 'Meals', icon: UtensilsCrossed },
     { to: fallback ? `${base}/summary` : '/periods', label: 'Summary', icon: Wallet },
+    { to: fallback ? `${base}/bill` : '/periods', label: 'Bill', icon: Calculator },
     { to: '/settings', label: 'Settings', icon: Settings },
   ]
 
@@ -155,7 +156,7 @@ export default function Layout() {
       </main>
 
       <nav className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 backdrop-blur pb-[env(safe-area-inset-bottom)] sm:hidden">
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           {tabs.map((t) => (
             <NavLink
               key={t.label}

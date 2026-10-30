@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import { ConfirmHost, ToastHost } from './components/ui'
+import BillPage from './pages/BillPage'
 import DayPage from './pages/DayPage'
 import ExpensesPage from './pages/ExpensesPage'
 import LoginPage from './pages/LoginPage'
@@ -77,6 +78,7 @@ function AuthedApp() {
           <Route path="meals" element={<MealsPage />} />
           <Route path="meals/:date" element={<DayPage />} />
           <Route path="summary" element={<SummaryPage />} />
+          <Route path="bill" element={<BillPage />} />
           <Route path="settings" element={<PeriodSettingsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

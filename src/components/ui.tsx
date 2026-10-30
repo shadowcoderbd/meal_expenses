@@ -1,7 +1,11 @@
 import clsx from 'clsx'
 import { Check, Copy, Loader2, Minus, Plus, X } from 'lucide-react'
 import { useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
+
+/** Joins classes and lets later Tailwind classes override earlier ones (e.g. a caller's w-24 beats the default w-full). */
+export const cn = (...args: Parameters<typeof clsx>) => twMerge(clsx(args))
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
@@ -18,7 +22,7 @@ export function Button({
     <button
       {...props}
       disabled={disabled || loading}
-      className={clsx(
+      className={cn(
         'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
         size === 'md' && 'h-11 px-4 text-sm',
         size === 'sm' && 'h-9 px-3 text-sm',
@@ -40,12 +44,12 @@ const fieldClass =
   'w-full h-11 rounded-xl border border-border bg-surface px-3 text-[15px] text-fg placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50'
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={clsx(fieldClass, className)} />
+  return <input {...props} className={cn(fieldClass, className)} />
 }
 
 export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select {...props} className={clsx(fieldClass, 'appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-9', className)} style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")" }}>
+    <select {...props} className={cn(fieldClass, 'appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-9', className)} style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")" }}>
       {children}
     </select>
   )
@@ -69,7 +73,7 @@ const cardTones = {
 }
 
 export function Card({ className, children, tone = 'default' }: { className?: string; children: ReactNode; tone?: keyof typeof cardTones }) {
-  return <div className={clsx('card rounded-2xl border shadow-sm', cardTones[tone], className)}>{children}</div>
+  return <div className={cn('card rounded-2xl border shadow-sm', cardTones[tone], className)}>{children}</div>
 }
 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
@@ -145,7 +149,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
             <X className="h-5 w-5" />
           </Button>
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div className="overflow-y-auto overflow-x-hidden px-5 py-4">{children}</div>
         {footer && <div className="flex gap-2 border-t border-border px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{footer}</div>}
       </div>
     </div>
