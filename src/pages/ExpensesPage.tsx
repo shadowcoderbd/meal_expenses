@@ -1,9 +1,10 @@
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import clsx from 'clsx'
 import { Plus, Receipt, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ExpenseForm } from '../components/ExpenseForm'
 import { PeriodGuard, type PeriodContext } from '../components/PeriodGuard'
-import { Button, Card, EmptyState } from '../components/ui'
+import { Button, Card, EmptyState, useSlidingIndicator } from '../components/ui'
 import { summarize } from '../lib/calc'
 import { money, num, prettyDate, weekday } from '../lib/format'
 import type { Expense } from '../lib/types'
@@ -20,10 +21,45 @@ export function StatCard({ label, value, sub, accent }: { label: string; value: 
 
 type Filter = 'all' | 'meal' | 'other'
 
+function ExpenseGroup({ date, items, ctx, onEdit }: { date: string; items: Expense[]; ctx: PeriodContext; onEdit: (e: Expense) => void }) {
+  const { meta, name } = ctx
+  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 220 })
+  return (
+    <section>
+      <div className="mb-1.5 flex items-baseline justify-between px-1">
+        <h3 className="text-sm font-semibold">
+          {prettyDate(date)} <span className="font-normal text-muted">· {weekday(date)}</span>
+        </h3>
+        <span className="tabular text-xs text-muted">{money(items.reduce((s, e) => s + e.amount, 0), meta.currency)}</span>
+      </div>
+      <Card ref={listRef} className="divide-y divide-border overflow-hidden">
+        {items.map((e) => (
+          <button key={e.id} onClick={() => onEdit(e)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2">
+            <div className={clsx('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', e.isMeal ? 'bg-primary-soft text-primary' : 'bg-surface-2 text-muted')}>
+              {e.isMeal ? <Receipt className="h-5 w-5" /> : <Users className="h-5 w-5" />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium">{e.description || e.category}</p>
+              <p className="truncate text-xs text-muted">
+                {e.category}
+                {!!e.quantity && ` · ${num(e.quantity)} ${e.unit ?? ''}`} · paid by {name(e.paidBy)}
+                {!e.isMeal && ` · shared by ${e.participants.length}`}
+              </p>
+            </div>
+            <span className="tabular shrink-0 font-semibold">{money(e.amount, meta.currency)}</span>
+          </button>
+        ))}
+      </Card>
+    </section>
+  )
+}
+
 function Expenses({ ctx }: { ctx: PeriodContext }) {
-  const { period, meta, name } = ctx
+  const { period, meta } = ctx
   const [editing, setEditing] = useState<Expense | 'new' | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
+  const [groupsRef] = useAutoAnimate<HTMLDivElement>({ duration: 220 })
+  const filterTabs = useSlidingIndicator<HTMLDivElement>(filter, 'rounded-lg bg-surface shadow-sm')
   const summary = useMemo(() => summarize(period), [period])
 
   const groups = useMemo(() => {
@@ -47,12 +83,14 @@ function Expenses({ ctx }: { ctx: PeriodContext }) {
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-1 rounded-xl bg-surface-2 p-1">
+        <div ref={filterTabs.ref} className="relative flex gap-1 rounded-xl bg-surface-2 p-1">
+          {filterTabs.indicator}
           {(['all', 'meal', 'other'] as Filter[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={clsx('rounded-lg px-3 py-1.5 text-sm font-medium capitalize', filter === f ? 'bg-surface shadow-sm' : 'text-muted')}
+              data-active={filter === f}
+              className={clsx('relative rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition-colors duration-300', filter === f ? 'text-fg' : 'text-muted')}
             >
               {f === 'other' ? 'Shared' : f}
             </button>
@@ -70,34 +108,11 @@ function Expenses({ ctx }: { ctx: PeriodContext }) {
           </EmptyState>
         </Card>
       ) : (
-        groups.map(([date, items]) => (
-          <section key={date}>
-            <div className="mb-1.5 flex items-baseline justify-between px-1">
-              <h3 className="text-sm font-semibold">
-                {prettyDate(date)} <span className="font-normal text-muted">· {weekday(date)}</span>
-              </h3>
-              <span className="tabular text-xs text-muted">{money(items.reduce((s, e) => s + e.amount, 0), meta.currency)}</span>
-            </div>
-            <Card className="divide-y divide-border overflow-hidden">
-              {items.map((e) => (
-                <button key={e.id} onClick={() => setEditing(e)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2">
-                  <div className={clsx('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', e.isMeal ? 'bg-primary-soft text-primary' : 'bg-surface-2 text-muted')}>
-                    {e.isMeal ? <Receipt className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{e.description || e.category}</p>
-                    <p className="truncate text-xs text-muted">
-                      {e.category}
-                      {!!e.quantity && ` · ${num(e.quantity)} ${e.unit ?? ''}`} · paid by {name(e.paidBy)}
-                      {!e.isMeal && ` · shared by ${e.participants.length}`}
-                    </p>
-                  </div>
-                  <span className="tabular shrink-0 font-semibold">{money(e.amount, meta.currency)}</span>
-                </button>
-              ))}
-            </Card>
-          </section>
-        ))
+        <div ref={groupsRef} className="space-y-4">
+          {groups.map(([date, items]) => (
+            <ExpenseGroup key={date} date={date} items={items} ctx={ctx} onEdit={setEditing} />
+          ))}
+        </div>
       )}
 
       <button

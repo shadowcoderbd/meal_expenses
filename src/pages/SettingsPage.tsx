@@ -3,7 +3,7 @@ import { Download, KeyRound, Smartphone, LogOut, Monitor, Moon, RotateCcw, Sun, 
 import { useRef, useState } from 'react'
 import { AmountsForm, RoomsEditor } from '../components/BillEditors'
 import { ListEditor, RatioEditor } from '../components/editors'
-import { Button, Card, CopyButton, ErrorText, Field, Input, Modal, SectionTitle, confirm, toast } from '../components/ui'
+import { Button, Card, CopyButton, ErrorText, Field, Input, Modal, SectionTitle, confirm, toast, useSlidingIndicator } from '../components/ui'
 import { downloadJson, parseBackup } from '../lib/backup'
 import { EMPTY_AMOUNTS } from '../lib/bill'
 import { MIN_PASSWORD_LENGTH, normaliseUsername } from '../lib/crypto'
@@ -127,17 +127,17 @@ function MembersSection() {
       <Card className="divide-y divide-border">
         {meta.members.map((m) => (
           <div key={m.id} className={clsx('flex flex-wrap items-center gap-2 px-4 py-3', !m.active && 'opacity-60')}>
-            <button className="min-w-0 flex-1 text-left" onClick={() => setRenaming(m)}>
+            <button className="min-w-[9rem] flex-1 text-left" onClick={() => setRenaming(m)}>
               <p className="truncate font-medium">
                 {m.name} {m.id === me && <span className="text-xs font-normal text-muted">(you)</span>}
               </p>
-              <p className="text-xs text-muted">
+              <p className="truncate text-xs text-muted">
                 @{m.username}
                 {!m.active && ' · inactive'}
               </p>
             </button>
             {m.id !== me && (
-              <div className="flex gap-1">
+              <div className="ml-auto flex gap-1">
                 <Button size="sm" variant="secondary" loading={busy === m.id} onClick={() => resetPassword(m)}>
                   {m.active ? 'Reset password' : 'Reactivate'}
                 </Button>
@@ -476,6 +476,7 @@ function InstallSection() {
 function AppearanceSection() {
   const pref = useTheme((s) => s.pref)
   const setPref = useTheme((s) => s.setPref)
+  const tabs = useSlidingIndicator<HTMLDivElement>(pref, 'rounded-lg bg-surface shadow-sm')
   const options: { value: ThemePref; label: string; icon: typeof Sun }[] = [
     { value: 'system', label: 'System', icon: Monitor },
     { value: 'light', label: 'Light', icon: Sun },
@@ -485,15 +486,17 @@ function AppearanceSection() {
     <section>
       <SectionTitle>Appearance</SectionTitle>
       <Card className="p-4">
-        <div className="grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1">
+        <div ref={tabs.ref} className="relative grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1">
+          {tabs.indicator}
           {options.map((o) => (
             <button
               key={o.value}
               onClick={() => setPref(o.value)}
               aria-pressed={pref === o.value}
+              data-active={pref === o.value}
               className={clsx(
-                'flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium',
-                pref === o.value ? 'bg-surface text-fg shadow-sm' : 'text-muted',
+                'relative flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors duration-300',
+                pref === o.value ? 'text-fg' : 'text-muted',
               )}
             >
               <o.icon className="h-4 w-4" />

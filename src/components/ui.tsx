@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { Check, Copy, Loader2, Minus, Plus, X } from 'lucide-react'
-import { useEffect, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
 
@@ -41,6 +41,49 @@ export function useExitAnimation<T extends HTMLElement>(active: boolean, duratio
     }
   }, [active, duration, fixed])
   return ref
+}
+
+/**
+ * A highlight that slides to the active item of a tab bar / segmented control. Put `ref` on a
+ * `relative` container, mark the active child with data-active="true" (NavLink's
+ * aria-current="page" also counts), give the items `relative` so they sit above it, and render
+ * `indicator` inside the container. `className` styles the highlight (background, radius…).
+ */
+export function useSlidingIndicator<T extends HTMLElement>(activeKey: unknown, className: string) {
+  const ref = useRef<T>(null)
+  const [rect, setRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  const [animate, setAnimate] = useState(false)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => {
+      const a = el.querySelector<HTMLElement>('[data-active="true"], [aria-current="page"]')
+      setRect(a ? { x: a.offsetLeft, y: a.offsetTop, w: a.offsetWidth, h: a.offsetHeight } : null)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [activeKey])
+
+  // Jump into place on first paint, slide on later changes.
+  useEffect(() => {
+    if (rect && !animate) requestAnimationFrame(() => setAnimate(true))
+  }, [rect, animate])
+
+  const indicator = rect && (
+    <span
+      aria-hidden
+      className={cn(
+        'pointer-events-none absolute left-0 top-0',
+        animate && 'transition-[transform,width,height] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]',
+        className,
+      )}
+      style={{ transform: `translate(${rect.x}px, ${rect.y}px)`, width: rect.w, height: rect.h }}
+    />
+  )
+  return { ref, indicator }
 }
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
@@ -108,8 +151,12 @@ const cardTones = {
   bad: 'border-transparent bg-danger-soft',
 }
 
-export function Card({ className, children, tone = 'default' }: { className?: string; children: ReactNode; tone?: keyof typeof cardTones }) {
-  return <div className={cn('card rounded-2xl border shadow-sm', cardTones[tone], className)}>{children}</div>
+export function Card({ className, children, tone = 'default', ref }: { className?: string; children: ReactNode; tone?: keyof typeof cardTones; ref?: Ref<HTMLDivElement> }) {
+  return (
+    <div ref={ref} className={cn('card rounded-2xl border shadow-sm', cardTones[tone], className)}>
+      {children}
+    </div>
+  )
 }
 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {

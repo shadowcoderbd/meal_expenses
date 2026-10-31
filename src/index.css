@@ -157,8 +157,12 @@ input[type='number'] {
 .anim-toast { animation: toast-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .anim-toast[data-state='closed'] { animation: fade-out 0.2s ease-in both; }
 
-/* Opacity only: a transform here would break position:fixed children (FAB, dialogs). */
-.anim-page { animation: fade-in 0.22s ease-out; }
+/* Slides in from the side of the tab you came from (--dir: -1, 0 or 1).
+   Uses `left`, not a transform: a transform would break position:fixed children (FAB, dialogs). */
+@keyframes page-in {
+  from { opacity: 0; left: calc(var(--dir, 0) * 32px); }
+}
+.anim-page { position: relative; left: 0; animation: page-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
 
 .anim-bump { display: inline-block; animation: bump 0.22s ease-out; }
 .anim-spin-in { animation: spin-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }

@@ -1,10 +1,10 @@
 import clsx from 'clsx'
 import { AlertCircle, Calculator, Check, ChevronDown, CloudOff, Loader2, Moon, Receipt, RefreshCw, Settings, SlidersHorizontal, Sun, UtensilsCrossed, Wallet } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom'
 import { useTheme } from '../lib/theme'
 import { refreshAll, useData, useMeta } from '../store/data'
-import { useExitAnimation } from './ui'
+import { useExitAnimation, useSlidingIndicator } from './ui'
 
 function SyncIndicator() {
   const status = useData((s) => s.status)
@@ -21,20 +21,20 @@ function SyncIndicator() {
         setSpinning(false)
       }}
       className={clsx(
-        'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+        'flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-full text-xs font-medium sm:px-2.5',
         status === 'error' ? 'bg-danger-soft text-danger' : 'bg-surface-2 text-muted',
       )}
     >
       {spinning ? (
-        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+        <RefreshCw className="h-4 w-4 animate-spin" />
       ) : status === 'saving' ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" />
       ) : status === 'offline' ? (
-        <CloudOff className="h-3.5 w-3.5" />
+        <CloudOff className="h-4 w-4" />
       ) : status === 'error' ? (
-        <AlertCircle className="h-3.5 w-3.5" />
+        <AlertCircle className="h-4 w-4" />
       ) : (
-        <Check className="h-3.5 w-3.5" />
+        <Check className="h-4 w-4" />
       )}
       <span className="hidden sm:inline">{label}</span>
     </button>
@@ -104,6 +104,8 @@ function PeriodSwitcher({ periodId }: { periodId?: string }) {
   )
 }
 
+const TAB_ORDER = ['expenses', 'meals', 'summary', 'bill', 'settings']
+
 export default function Layout() {
   const location = useLocation()
   const match = useMatch('/p/:periodId/*')
@@ -119,6 +121,19 @@ export default function Layout() {
     { to: fallback ? `${base}/bill` : '/periods', label: 'Bill', icon: Calculator },
     { to: '/settings', label: 'Settings', icon: Settings },
   ]
+  // Which way the page slides in: by tab order, like the nav highlight.
+  const tabIndex = (path: string) => TAB_ORDER.indexOf(path.split('/').pop()!)
+  // Worked out once per navigation, so later re-renders on the same page don't reset it.
+  const slide = useRef({ path: location.pathname, dir: 0 })
+  if (slide.current.path !== location.pathname) {
+    const from = tabIndex(slide.current.path)
+    const to = tabIndex(location.pathname)
+    slide.current = { path: location.pathname, dir: from < 0 || to < 0 || from === to ? 0 : to > from ? 1 : -1 }
+  }
+  const dir = slide.current.dir
+
+  const topNav = useSlidingIndicator<HTMLElement>(location.pathname, 'rounded-xl bg-primary-soft')
+  const bottomNav = useSlidingIndicator<HTMLDivElement>(location.pathname, 'rounded-xl bg-primary-soft')
 
   return (
     <div className="min-h-dvh">
@@ -135,13 +150,17 @@ export default function Layout() {
               <SlidersHorizontal className="h-4 w-4" />
             </NavLink>
           )}
-          <nav className="ml-auto hidden items-center gap-1 sm:flex">
+          <nav ref={topNav.ref} className="relative ml-auto hidden items-center gap-1 sm:flex">
+            {topNav.indicator}
             {tabs.map((t) => (
               <NavLink
                 key={t.label}
                 to={t.to}
                 className={({ isActive }) =>
-                  clsx('flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium', isActive ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2')
+                  clsx(
+                    'relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-300',
+                    isActive ? 'text-primary' : 'text-muted hover:bg-surface-2',
+                  )
                 }
               >
                 <t.icon className="h-4 w-4" />
@@ -156,30 +175,29 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 pb-28 pt-4 sm:pb-10">
-        <div key={location.pathname} className="anim-page">
+      <main className="mx-auto max-w-5xl overflow-x-clip px-4 pb-28 pt-4 sm:pb-10">
+        <div key={location.pathname} className="anim-page" style={{ '--dir': dir } as CSSProperties}>
           <Outlet />
         </div>
       </main>
 
       <nav className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 backdrop-blur pb-[env(safe-area-inset-bottom)] sm:hidden">
-        <div className="grid grid-cols-5">
+        <div ref={bottomNav.ref} className="relative grid grid-cols-5 gap-1 px-2 py-1.5">
+          {bottomNav.indicator}
           {tabs.map((t) => (
             <NavLink
               key={t.label}
               to={t.to}
+              title={t.label}
+              aria-label={t.label}
               className={({ isActive }) =>
-                clsx('flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors duration-200', isActive ? 'text-primary' : 'text-muted')
+                clsx(
+                  'relative mx-auto flex aspect-square w-full max-w-[3.25rem] items-center justify-center rounded-xl transition-colors duration-300',
+                  isActive ? 'text-primary' : 'text-muted',
+                )
               }
             >
-              {({ isActive }) => (
-                <>
-                  <span className={clsx('rounded-full px-4 py-0.5 transition-all duration-300', isActive ? 'scale-105 bg-primary-soft' : 'bg-transparent')}>
-                    <t.icon className="h-5 w-5" />
-                  </span>
-                  {t.label}
-                </>
-              )}
+              {({ isActive }) => <t.icon className={clsx('h-6 w-6 transition-transform duration-300', isActive && 'scale-110')} />}
             </NavLink>
           ))}
         </div>
