@@ -3,3 +3,13 @@ dist
 .env.local
 *.log
 *.tsbuildinfo
+
+# Android: signing key and its passwords must never be committed (back them up somewhere safe).
+android/android.keystore
+android/keystore-credentials.txt
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+*.apk
+*.aab

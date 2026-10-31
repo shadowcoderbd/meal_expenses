@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.shadowcoderbd.meals",
+      "sha256_cert_fingerprints": [
+        "3E:2A:91:94:34:04:41:0C:80:CB:4E:E8:20:92:D7:DA:9E:FC:89:1F:5B:59:7E:21:7D:88:0E:41:BD:E2:56:E2"
+      ]
+    }
+  }
+]

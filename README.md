@@ -56,6 +56,27 @@ offline. When a new version is deployed, the app shows an **Update** banner.
 
 Icons are generated from `public/logo.svg` with `npm run icons`.
 
+## Android APK
+
+`android/` is a Trusted Web Activity: a small Android app that opens this site in Chrome
+without the address bar. All features, updates and offline support come from the website,
+so you only need to rebuild the APK if the Android project itself changes.
+
+GitHub Actions (`.github/workflows/android.yml`) builds a signed APK and publishes it on the
+repo's **Releases** page. One-time setup:
+
+1. Add these repository secrets (**Settings → Secrets and variables → Actions**). The values
+   come from `android/keystore-credentials.txt` and `android/android.keystore`, both kept
+   out of git:
+   - `ANDROID_KEYSTORE_BASE64`: output of `base64 -w0 android/android.keystore`
+   - `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`
+2. Create the repo `shadowcoderbd.github.io` with the contents of `android/user-site/`, so that
+   `https://shadowcoderbd.github.io/.well-known/assetlinks.json` exists.
+3. **Actions → Build Android APK → Run workflow**, then download the APK from **Releases**.
+
+**Back up `android.keystore` and its password.** If they are lost, installed apps can't be
+updated anymore.
+
 ## Development
 
 ```bash
