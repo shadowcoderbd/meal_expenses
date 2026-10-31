@@ -2,6 +2,7 @@ import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
+import UpdatePrompt from './components/UpdatePrompt'
 import { ConfirmHost, ToastHost } from './components/ui'
 import BillPage from './pages/BillPage'
 import DayPage from './pages/DayPage'
@@ -107,6 +108,7 @@ export default function App() {
       {content}
       <ConfirmHost />
       <ToastHost />
+      <UpdatePrompt />
     </>
   )
 }

@@ -48,6 +48,14 @@ send them. They can change it after logging in.
 4. Open the deployed site and fill in the setup form. You become the first member.
 5. Add the other members in **Settings → Members** and send each person their generated password.
 
+## Install as an app (PWA)
+
+On Android, open the site in Chrome and tap **Settings → Install app → Install** in the app
+(or choose **⋮ → Install app** in Chrome). It opens full-screen from the home screen and loads
+offline. When a new version is deployed, the app shows an **Update** banner.
+
+Icons are generated from `public/logo.svg` with `npm run icons`.
+
 ## Development
 
 ```bash

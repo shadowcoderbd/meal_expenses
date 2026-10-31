@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Download, KeyRound, LogOut, Monitor, Moon, RotateCcw, Sun, Upload, UserPlus } from 'lucide-react'
+import { Download, KeyRound, Smartphone, LogOut, Monitor, Moon, RotateCcw, Sun, Upload, UserPlus } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { AmountsForm, RoomsEditor } from '../components/BillEditors'
 import { ListEditor, RatioEditor } from '../components/editors'
@@ -8,6 +8,7 @@ import { downloadJson, parseBackup } from '../lib/backup'
 import { EMPTY_AMOUNTS } from '../lib/bill'
 import { MIN_PASSWORD_LENGTH, normaliseUsername } from '../lib/crypto'
 import { nowIso, today, uid } from '../lib/ids'
+import { isIos, useInstall } from '../lib/pwa'
 import { useTheme, type ThemePref } from '../lib/theme'
 import type { Bill, Member } from '../lib/types'
 import { changeOwnPassword, issuePassword, replaceToken, revokeLogin, useAuth, usernameTaken } from '../store/auth'
@@ -445,6 +446,33 @@ function BillDefaultsSection() {
   )
 }
 
+function InstallSection() {
+  const { promptEvent, installed, install } = useInstall()
+  if (installed) return null
+  return (
+    <section>
+      <SectionTitle>Install app</SectionTitle>
+      <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <p className="text-sm text-muted">
+            {promptEvent
+              ? 'Add Meal Expenses to your home screen. It opens full-screen like a normal app and starts even without internet.'
+              : isIos()
+                ? 'In Safari, tap the Share button and choose “Add to Home Screen”.'
+                : 'Open the browser menu (⋮) and choose “Install app” or “Add to Home screen”.'}
+          </p>
+        </div>
+        {promptEvent && (
+          <Button onClick={() => void install()}>
+            <Download className="h-4 w-4" /> Install
+          </Button>
+        )}
+      </Card>
+    </section>
+  )
+}
+
 function AppearanceSection() {
   const pref = useTheme((s) => s.pref)
   const setPref = useTheme((s) => s.setPref)
@@ -486,6 +514,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <AccountSection />
+      <InstallSection />
       <AppearanceSection />
       <MembersSection />
 

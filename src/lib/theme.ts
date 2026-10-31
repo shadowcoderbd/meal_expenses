@@ -15,6 +15,17 @@ function readPref(): ThemePref {
   }
 }
 
+const BAR_COLORS = { light: '#ffffff', dark: '#151e1c' }
+
+/** Points both theme-color metas (light/dark media) at the chosen theme, or restores them for "system". */
+function applyBarColor(pref: ThemePref) {
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
+    const scheme = m.media.includes('dark') ? 'dark' : 'light'
+    m.content = BAR_COLORS[pref === 'system' ? scheme : pref]
+  })
+}
+applyBarColor(readPref())
+
 const resolve = (pref: ThemePref): 'light' | 'dark' => (pref === 'system' ? (media.matches ? 'dark' : 'light') : pref)
 
 interface ThemeState {
@@ -40,6 +51,7 @@ export const useTheme = create<ThemeState>((set) => ({
     setTimeout(() => root.classList.remove('theme-transition'), 350)
     if (pref === 'system') delete root.dataset.theme
     else root.dataset.theme = pref
+    applyBarColor(pref)
     set({ pref, resolved: resolve(pref) })
   },
 }))
